@@ -1,4 +1,4 @@
-import cloudinary from "../lib/cloudinary.js";
+import { uploadImage } from "../lib/uploadImage.js";
 import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
@@ -76,25 +76,13 @@ export const logout = async (req, res) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-
     if (!req.file) {
       return res.status(400).json({ message: "Profile picture is required" });
     }
-    const uploadResponse = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "profile_pics" },
-        (error, result) => {
-          if (result) resolve(result);
-          else reject(error);
-        }
-      );
-
-      stream.end(req.file.buffer);
-    });
-
+    const profilePicUrl = await uploadImage("profilePic", req);
     const updatedUser = await User.findByIdAndUpdate(
       userId,
-      { profilePic: uploadResponse.secure_url },
+      { profilePic: profilePicUrl },
       { new: true }
     );
     res.status(200).json(updatedUser);

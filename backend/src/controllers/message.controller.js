@@ -34,4 +34,25 @@ export const getMessages = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
-export const sendMessage = async (req, res) => {};
+export const sendMessage = async (req, res) => {
+  try {
+    const { id: userToChatId } = req.params;
+    const myId = req.user._id;
+    const { text } = req.body;
+    const MessageImages = "";
+    if (req.file) {
+      MessageImages = await uploadImage("MessageImages", req);
+    }
+    const newMessage = await Message.create({
+      senderId: myId,
+      receiverId: userToChatId,
+      text,
+      image: MessageImages,
+    });
+
+    res.status(201).json(newMessage);
+  } catch (error) {
+    console.log("Error in sendMessage controller: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
