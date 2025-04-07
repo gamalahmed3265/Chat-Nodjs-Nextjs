@@ -1,3 +1,4 @@
+import { getReceiverSocketId, io } from "../lib/socket.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
 
@@ -39,16 +40,21 @@ export const sendMessage = async (req, res) => {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
     const { text } = req.body;
-    const MessageImages = "";
+    let imageUrl;
     if (req.file) {
-      MessageImages = await uploadImage("MessageImages", req);
+      imageUrl = await uploadImage("MessageImages", req);
     }
     const newMessage = await Message.create({
       senderId: myId,
       receiverId: userToChatId,
       text,
-      image: MessageImages,
+      image: imageUrl,
     });
+
+    const receiverSocketId = getReceiverSocketId(userToChatId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
 
     res.status(201).json(newMessage);
   } catch (error) {
